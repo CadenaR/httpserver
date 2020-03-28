@@ -5,7 +5,7 @@ from socketserver import TCPServer
 from dictionary import Dictionary
 
 
-class HTTPServer(TCPServer):
+class HTTPServer:
 
     def __init__(self, host='127.0.0.1', port=5005):
         self.host = host
@@ -51,7 +51,7 @@ class HTTPServer(TCPServer):
         try:
             response = (
                 self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
-                b"Cache-Control:" + self.str2b(req_dictionary['Cache-Control']) + b"\r\n",  # response line
+                #b"Cache-Control:" + self.str2b(req_dictionary['Cache-Control']) + b"\r\n",  # response line
                 b"Content-Type: text/html; charset=utf-8\r\n",
                 b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
             )
