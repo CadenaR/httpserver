@@ -3,7 +3,7 @@ import sys
 from socketserver import TCPServer
 
 from dictionary import Dictionary
-
+import cgi
 
 class HTTPServer:
 
@@ -38,8 +38,8 @@ class HTTPServer:
 
         if req_dictionary['Method'] == 'GET':
             response = self.get(req_dictionary)
-        # elif req_dictionary['Method'] == 'POST':
-        #    response = self.post(req_dictionary)
+        elif req_dictionary['Method'] == 'POST':
+            response = self.post(req_dictionary)
         else:
             return b"".join(self.error(req_dictionary['Version'], 501))
         print(req_dictionary)
@@ -79,6 +79,33 @@ class HTTPServer:
             return self.error(req_dictionary['Version'], 404)
 
         return response
+
+    def post(self,req_dictionary):
+        data = req_dictionary.split("\r\n")
+        requestType = data[0].split(" ")
+
+        newDictionary = {
+            'Method': requestType[0],
+            'Url': requestType[1],
+            'Version': requestType[2]
+        }
+
+        for x in range(1, len(data)):
+            separated = data[x].split(":")
+            if len(separated) == 2:
+                newDictionary.update({separated[0]: separated[1]})
+            message = data[len(data) - 1].split("=")
+
+        # Create instance of FieldStorage
+        form = cgi.FieldStorage()
+
+        # Get data from fields
+        params = {
+            'First name': form.getvalue('fname'),
+            'Last name': form.getvalue('lname')
+        }
+        requestDictionary.update({'params': params})
+        return (json.dumps(requestDictionary, indent=4))
 
     # Convierte str a byte
     def str2b(self, data):
