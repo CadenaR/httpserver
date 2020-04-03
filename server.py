@@ -33,7 +33,6 @@ class HTTPServer:
     # convertido a bytes
     def handle_request(self, data):
         dictionary = Dictionary()
-
         req_dictionary = dictionary.parseInfo(data.decode())
 
         if req_dictionary['Method'] == 'GET':
@@ -42,19 +41,26 @@ class HTTPServer:
             response = self.post(req_dictionary)
         else:
             return b"".join(self.error(req_dictionary['Version'], 501))
-        print(req_dictionary)
+
         return b"".join(response)
 
     # Se encarga de la tupla de respuesta, viendo si los encabezados estan completos y si el contenido existe
     # para poder regresar una tupla ya sea con el contenido pedido o con un error indicado
     def get(self, req_dictionary):
         try:
-            response = (
-                self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
-                #b"Cache-Control:" + self.str2b(req_dictionary['Cache-Control']) + b"\r\n",  # response line
-                b"Content-Type: text/html; charset=utf-8\r\n",
-                b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
-            )
+            if 'Cache-Control' in req_dictionary:
+                response = (
+                    self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
+                    b"Cache-Control:" + self.str2b(req_dictionary['Cache-Control']) + b"\r\n",  # response line
+                    b"Content-Type: text/html; charset=utf-8\r\n",
+                    b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
+                )
+            else:
+                response = (
+                    self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
+                    b"Content-Type: text/html; charset=utf-8\r\n",
+                    b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
+                )
         except KeyError:
             return self.error(req_dictionary['Version'], 404)
 
@@ -80,32 +86,30 @@ class HTTPServer:
 
         return response
 
-    def post(self,req_dictionary):
-        data = req_dictionary.split("\r\n")
-        requestType = data[0].split(" ")
+    def post(self, req_dictionary):
+        try:
+            print("\r\nReceived parameters: ")
+            for x, y in req_dictionary['params'].items():
+                print(f'{x} = {y}')
 
-        newDictionary = {
-            'Method': requestType[0],
-            'Url': requestType[1],
-            'Version': requestType[2]
-        }
+            print('\r\n')
 
-        for x in range(1, len(data)):
-            separated = data[x].split(":")
-            if len(separated) == 2:
-                newDictionary.update({separated[0]: separated[1]})
-            message = data[len(data) - 1].split("=")
+            if 'Cache-Control' in req_dictionary:
+                return (
+                    self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
+                    b"Cache-Control:" + self.str2b(req_dictionary['Cache-Control']) + b"\r\n",  # response line
+                    b"Content-Type: text/html; charset=utf-8\r\n",
+                    b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
+                )
+            else:
+                return (
+                    self.str2b(req_dictionary['Version']) + b" 200 OK\r\n",  # response line
+                    b"Content-Type: text/html; charset=utf-8\r\n",
+                    b"Connection:" + self.str2b(req_dictionary['Connection']) + b"\r\n",  # response line
+                )
 
-        # Create instance of FieldStorage
-        form = cgi.FieldStorage()
-
-        # Get data from fields
-        params = {
-            'First name': form.getvalue('fname'),
-            'Last name': form.getvalue('lname')
-        }
-        requestDictionary.update({'params': params})
-        return (json.dumps(requestDictionary, indent=4))
+        except IOError:
+            return self.error(req_dictionary['Version'], 400)
 
     # Convierte str a byte
     def str2b(self, data):
@@ -117,6 +121,7 @@ class HTTPServer:
 
     def error(self, version, code):
         status_codes = {
+            400: b'Bad Request\r\n',
             404: b'Not Found\r\n',
             501: b'Not Implemented\r\n',
         }

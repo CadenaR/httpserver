@@ -23,8 +23,13 @@ class Dictionary:
             if requestDictionary['Method'] == 'GET':
                 if '?' in requestDictionary['Url']:
                     get = requestDictionary['Url'].split("?")
+                    if '%22' in get[1]:
+                        get[1] = get[1].replace('%22', '')
 
-                    if '&' in get:
+                    if '%20' in get[1]:
+                        get[1] = get[1].replace('%20', ' ')
+
+                    if '&' in get[1]:
                         petition = get[1].split("&")
                         for p in petition:
                             param = p.split("=")
@@ -37,7 +42,7 @@ class Dictionary:
             elif requestDictionary['Method'] == 'POST':
                 completereq = data[len(data) - 1]
 
-                if ' ' in completereq:
+                if '&' in completereq:
                     petition = completereq.split("&")
                     for p in petition:
                         param = p.split("=")
@@ -48,5 +53,4 @@ class Dictionary:
                     params.update({param[0]: param[1]})
 
         requestDictionary.update({'params': params})
-        # print(json.dumps(requestDictionary, indent=4))
         return requestDictionary
